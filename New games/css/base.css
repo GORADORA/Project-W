@@ -1,0 +1,132 @@
+/* ============================================================
+   基本設定:色・文字・ボタンなど、全体で使うもの
+   色を変えたいときは、この :root の中を書き換えればOK
+   ============================================================ */
+
+:root {
+  /* ---- 黒板と木枠 ---- */
+  --board:        #22382d;
+  --board-2:      #2c4739;
+  --board-line:   rgba(242, 239, 230, 0.16);
+  --wood:         #6e4225;
+  --wood-2:       #9c6337;
+  --wood-dark:    #3f2414;
+  --wall:         #1a1512;
+
+  /* ---- チョーク ---- */
+  --chalk:        #f3efe4;
+  --chalk-dim:    rgba(243, 239, 228, 0.62);
+  --chalk-faint:  rgba(243, 239, 228, 0.28);
+  --chalk-yellow: #ffe27a;
+  --chalk-pink:   #ff9fb2;
+  --chalk-blue:   #8fd3ff;
+
+  /* ---- カード表面(ユーザーの見本デザイン) ---- */
+  --card-cream:   #fff8d7;   /* 名前の下(効果テキスト)の背景 */
+  --ink:          #2b2520;
+  --ink-soft:     #6b6258;
+  --teacher:      #F5610A;   /* 先生カードの外枠・コストの四角(オレンジ) */
+  --teacher-band: #FF735A;   /* 先生カードの名前の帯(明るいオレンジ) */
+  --teacher-edge: #9c3d06;   /* 先生カードのコストの縁取り */
+  --lesson:       #00C48B;   /* 授業カードの外枠・コストの四角(緑) */
+  --lesson-band:  #56F7C8;   /* 授業カードの名前の帯(明るいミント) */
+  --lesson-edge:  #17693a;   /* 授業カードのコストの縁取り */
+  --font-card-num: 'Anton', 'Anton Offline', 'Zen Maru Gothic', 'Zen Maru Gothic Offline', 'Yu Gothic', sans-serif;  /* 数字・名前の太い字体 */
+  --back:         #fabe00;   /* カード裏面の上側(学校の黄色) */
+  --back-2:       #edc955;   /* カード裏面の下側(少し明るい金色) */
+  --back-edge:    #b98c00;   /* 山札を重ねた時の厚みの色 */
+  --gold:         #f2c14e;
+
+  /* ---- 状態を表す色 ---- */
+  --glow:         #ffe27a;   /* 選べる・光る */
+  --target:       #ff6b6b;   /* 対決の相手 */
+  --choice:       #7fe3ff;   /* 選択肢 */
+  --buff:         #6ee79a;   /* パワーが上がっている */
+  --debuff:       #ff7b7b;   /* パワーが下がっている */
+  --mana:         #8fd3ff;
+  --mana-used:    rgba(143, 211, 255, 0.22);
+
+  /* ---- 文字 ---- */
+  /* 'Offline' の付いた名前は、ネットがない時の予備(css/fonts.css) */
+  --font-ui:    'Zen Maru Gothic', 'Zen Maru Gothic Offline', 'Hiragino Maru Gothic ProN', 'Yu Gothic', system-ui, sans-serif;
+  --font-chalk: 'Klee One', 'Klee One Offline', 'Zen Maru Gothic', 'Zen Maru Gothic Offline', 'Yu Gothic', serif;
+
+  /* ---- カードの大きさ(画面サイズに合わせて自動で変わる) ---- */
+  --sidebar-w: 0px;
+  --card-h: min(
+    calc((100dvh - 64px) / 4.7),
+    calc((100vw - var(--sidebar-w) - 40px) / 9.8 * 1.4)
+  );
+  --card-w: calc(var(--card-h) / 1.4);
+  --radius: 10px;
+}
+
+@media (min-width: 1000px) {
+  :root { --sidebar-w: 300px; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% 0%, #3a2a1f 0%, transparent 70%),
+    var(--wall);
+  color: var(--chalk);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+[hidden] { display: none !important; }
+
+/* ---- ボタン ---- */
+.btn {
+  appearance: none;
+  border: 2px solid var(--chalk-dim);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--chalk);
+  font: 700 0.95rem/1 var(--font-ui);
+  padding: 0.6em 1.2em;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--chalk); }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--chalk-yellow); outline-offset: 2px; }
+
+.btn--primary {
+  background: linear-gradient(180deg, #ffe89a, var(--chalk-yellow));
+  border-color: #fff3c4;
+  color: #3a2a10;
+  box-shadow: 0 3px 0 #b8912c, 0 6px 18px rgba(255, 226, 122, 0.25);
+}
+.btn--primary:hover { background: linear-gradient(180deg, #fff1bd, #ffe68c); border-color: #fff; }
+.btn--small { font-size: 0.8rem; padding: 0.45em 0.9em; }
+.btn--ghost { border-color: var(--chalk-faint); background: transparent; color: var(--chalk-dim); }
+
+/* ---- 黒板の質感(粉っぽいムラ) ---- */
+.chalkboard {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(255, 255, 255, 0.05), transparent 45%),
+    radial-gradient(ellipse at 80% 70%, rgba(255, 255, 255, 0.04), transparent 50%),
+    radial-gradient(ellipse at 60% 10%, rgba(0, 0, 0, 0.18), transparent 55%),
+    repeating-linear-gradient(115deg, rgba(255, 255, 255, 0.012) 0 2px, transparent 2px 5px),
+    linear-gradient(180deg, var(--board-2), var(--board));
+}
+
+/* ---- チョークで書いたような見出し ---- */
+.chalk-text {
+  font-family: var(--font-chalk);
+  color: var(--chalk);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.6), 0 0 6px rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.04em;
+}

@@ -1,0 +1,51 @@
+/* ============================================================
+   ネットがない時のための、予備の文字の形(フォント)
+   ふだんは Google Fonts(index.html で読み込み)を使う。
+   ネットにつながっていなくて Google Fonts が読めない時だけ、
+   assets/fonts/ に置いたこの予備が使われる(文化祭のブースなど)。
+   名前に「Offline」を付けて別の名前にしているので、ネットがある時は
+   この大きなファイル(合計約30MB)は読み込まれない。
+   使っている場所:base.css・whiteboard.css の --font-○○ の並び
+   ライセンス:SIL Open Font License(assets/fonts/OFL-*.txt)
+   ============================================================ */
+
+@font-face {
+  font-family: 'Anton Offline';
+  src: url('../assets/fonts/Anton-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Yusei Magic Offline';
+  src: url('../assets/fonts/YuseiMagic-Regular.ttf') format('truetype');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Klee One Offline';
+  src: url('../assets/fonts/KleeOne-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Klee One Offline';
+  src: url('../assets/fonts/KleeOne-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Zen Maru Gothic Offline';
+  src: url('../assets/fonts/ZenMaruGothic-Medium.ttf') format('truetype');
+  font-weight: 400 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Zen Maru Gothic Offline';
+  src: url('../assets/fonts/ZenMaruGothic-Bold.ttf') format('truetype');
+  font-weight: 600 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Zen Maru Gothic Offline';
+  src: url('../assets/fonts/ZenMaruGothic-Black.ttf') format('truetype');
+  font-weight: 800 900;
+  font-display: swap;
+}

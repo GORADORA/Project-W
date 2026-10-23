@@ -1,0 +1,284 @@
+/* ============================================================
+   カードのデザイン
+   カードの中の文字や飾りは「カードの幅に対する割合(cqw)」で
+   指定しているので、大きく表示しても小さく表示しても崩れない
+   ============================================================ */
+
+/* 動かす単位(アニメーション用の外枠)。見た目は中の .card が担当 */
+.cardbox {
+  position: relative;
+  border-radius: var(--radius);
+  /* 名前の帯・コストの重なり順をカードの中だけに閉じ込める
+     (手札が重なった時、左のカードの名前が右のカードの上に出ないように) */
+  isolation: isolate;
+}
+
+/* カードの中の大きさ(cqw)は、この外枠の幅が基準になる */
+.cardbox, .reveal, .pile__stack {
+  container-type: size;
+}
+
+/* ---- カード表面(ユーザーの見本デザイン) ----
+   太い外枠 / 左上にコストの四角 / 大きなイラスト / イラストに重なる名前の帯 /
+   クリーム色の効果テキスト / 左下に種類、右下にパワー
+   色は base.css の --teacher / --lesson などで変えられる */
+.card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 9cqw;
+  border-style: solid;
+  border-color: var(--frame, #555);
+  border-width: 6.5cqw 5cqw 5.5cqw;
+  background: var(--card-cream);
+  color: var(--ink);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.25s ease;
+}
+
+.card--teacher { --frame: var(--teacher); --band: var(--teacher-band); --edge: var(--teacher-edge); }
+.card--lesson  { --frame: var(--lesson);  --band: var(--lesson-band);  --edge: var(--lesson-edge); }
+
+/* ---- イラスト(名前の帯の下半分まで伸びて、帯の後ろに隠れる) ---- */
+.card__art {
+  position: relative;
+  flex: none;
+  height: 74cqw;
+  border-radius: 2.5cqw 2.5cqw 0 0;
+  overflow: hidden;
+}
+/* イラストが入るまでの仮の模様 */
+.card--teacher .card__art {
+  background:
+    radial-gradient(circle at 50% 110%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.14) 1.2cqw, transparent 1.4cqw) 0 0 / 8cqw 8cqw,
+    linear-gradient(145deg, hsl(var(--hue) 62% 64%), hsl(calc(var(--hue) + 28) 48% 38%));
+}
+.card--lesson .card__art {
+  /* ノートの罫線(授業カードの緑に合わせた色) */
+  background:
+    linear-gradient(90deg, transparent 13cqw, rgba(230, 80, 80, 0.5) 13cqw 13.8cqw, transparent 13.8cqw),
+    repeating-linear-gradient(180deg, transparent 0 6.4cqw, rgba(40, 140, 80, 0.22) 6.4cqw 7cqw),
+    linear-gradient(180deg, #f6fcf7, #daf1e1);
+}
+/* 画像が入っているとき(assets/cards/ の画像。仮の模様より優先) */
+.card .card__art.has-image {
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ---- 左上のコスト:枠と同じ色の角丸の四角に、白い太字 ---- */
+.card__cost {
+  position: absolute;
+  left: 0.9cqw;
+  top: 0.9cqw;
+  z-index: 2;
+  width: 15cqw;
+  height: 14.5cqw;
+  display: grid;
+  place-items: center;
+  border-radius: 3.2cqw;
+  background: var(--frame);
+  border: 0.35cqw solid var(--edge);
+  color: #fff;
+  font: 12.5cqw / 1 var(--font-card-num);
+  text-shadow: 0 0.4cqw 0 rgba(0, 0, 0, 0.18);
+}
+/* 購買の効果でコストが下がっている時は、白地に緑の数字(授業カードの緑と区別できるように) */
+.card__cost.is-down { background: #fff; color: #2b8a3e; border-color: #2b8a3e; text-shadow: none; }
+
+/* ---- 名前の帯:イラストの下端に重なる、角丸の帯 ---- */
+.card__name {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  height: 17cqw;
+  margin-top: -8.5cqw;
+  padding: 0 3cqw;
+  display: grid;
+  place-items: center;
+  border-radius: 4cqw;
+  background: var(--band);
+  color: #fff;
+  font: 12cqw / 1 var(--font-card-num);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-shadow: 0 0.4cqw 0 rgba(0, 0, 0, 0.12);
+}
+/* 長い名前は自動で小さく */
+.card__name.is-long  { font-size: 9cqw; }
+.card__name.is-xlong { font-size: 7cqw; }
+
+/* ---- 効果テキスト(名前の下) ---- */
+.card__text {
+  flex: 1;
+  min-height: 0;
+  margin: 2.5cqw 3.5cqw 0;
+  padding-bottom: 13cqw;
+  font-size: 5.2cqw;
+  line-height: 1.38;
+  overflow: hidden;
+}
+/* 長い効果テキストは自動で小さく */
+.card__text.is-long  { font-size: 4.5cqw; }
+.card__text.is-xlong { font-size: 4cqw; line-height: 1.32; }
+
+/* ---- 左下の種類(先生/授業) ---- */
+.card__type {
+  position: absolute;
+  left: 2.2cqw;
+  bottom: 1.6cqw;
+  font: 900 5.8cqw / 1 var(--font-ui);
+  color: #222;
+}
+
+/* ---- 右下のパワー:黒い丸型に白い縁取り ---- */
+.card__power {
+  position: absolute;
+  right: 2.4cqw;
+  bottom: 1.2cqw;
+  min-width: 25cqw;
+  height: 12.5cqw;
+  padding: 0 3.5cqw;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #333;
+  box-shadow: 0 0 0 0.5cqw #fff, 0 0 0 0.9cqw #333;
+  color: #fff;
+  font: 9.5cqw / 1 var(--font-card-num);
+  letter-spacing: 0.02em;
+}
+.card__power.is-up   { color: var(--buff); }
+.card__power.is-down { color: var(--debuff); }
+
+/* ---- 小さく表示するとき(盤面・手札):効果テキストを隠して、イラストと数字を大きく ---- */
+@container (max-width: 120px) {
+  .card__text,
+  .card__type { display: none; }
+  .card__art { height: 88cqw; }
+  .card--lesson .card__art { height: 100cqw; }
+  .card__cost { width: 23cqw; height: 22cqw; font-size: 18cqw; border-radius: 4cqw; }
+  /* 名前は大きく、薄い帯の上でも読めるよう影を付ける */
+  .card__name {
+    height: 21cqw;
+    margin-top: -10.5cqw;
+    font-size: 17cqw;
+    text-shadow: 0 0.5cqw 1.5cqw rgba(0, 0, 0, 0.45);
+  }
+  .card__name.is-long  { font-size: 12cqw; }
+  .card__name.is-xlong { font-size: 9.5cqw; }
+  .card__power {
+    left: 50%;
+    right: auto;
+    translate: -50% 0;
+    bottom: 2.5cqw;
+    min-width: 62cqw;
+    height: 17cqw;
+    font-size: 13cqw;
+  }
+}
+
+/* ---- 裏面(学校ロゴ+黄色のグラデーション) ----
+   ロゴは assets/card-back-logo.svg。色は base.css の --back / --back-2 */
+.card--back {
+  border: 0;
+  background:
+    url('../assets/card-back-logo.svg') center / 83% auto no-repeat,
+    linear-gradient(180deg, var(--back) 0%, var(--back) 22%, var(--back-2) 88%);
+  box-shadow:
+    inset 0 0 0 0.6cqw rgba(255, 255, 255, 0.25),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+}
+/* 相手側のカード裏面は、相手から見た向きになるよう上下反転 */
+.hand--top .card--back,
+.half--top .card--back {
+  transform: rotate(180deg);
+}
+
+/* ---- 場の先生の状態を示すバッジ ---- */
+.badges {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.9em;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  z-index: 3;
+  pointer-events: none;
+  font-size: clamp(0.55rem, calc(var(--card-w) * 0.13), 0.8rem);
+}
+.badge {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.badge--guard { background: linear-gradient(180deg, #fff2b0, var(--gold)); color: #4a3505; }
+.badge--sick  { background: rgba(20, 30, 40, 0.9); color: var(--chalk-blue); border: 1px solid rgba(143, 211, 255, 0.4); }
+.badge--spent { background: rgba(20, 20, 20, 0.85); color: var(--chalk-dim); border: 1px solid var(--chalk-faint); }
+
+/* ---- カードの状態 ---- */
+.is-sick > .card  { filter: saturate(0.6) brightness(0.92); }
+.is-spent > .card { filter: grayscale(0.45) brightness(0.72); transform: rotate(-5deg); }
+
+/* 手札:触れると少し持ち上がる */
+.hand--bottom > .cardbox { cursor: pointer; }
+.hand--bottom > .cardbox:hover { z-index: 5; }
+.hand--bottom > .cardbox:hover > .card { transform: translateY(-14%) scale(1.05); }
+.hand--bottom > .cardbox.is-selected { z-index: 6; }
+.hand--bottom > .cardbox.is-selected > .card {
+  transform: translateY(-20%) scale(1.08);
+  box-shadow: 0 0 0 3px var(--glow), 0 0 24px var(--glow), 0 12px 24px rgba(0, 0, 0, 0.4);
+}
+.hand--bottom > .cardbox.is-unplayable > .card { filter: brightness(0.78) saturate(0.8); }
+
+/* 使える・選べる・狙える、を光る枠で示す(動きは animation.css) */
+.cardbox::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: calc(var(--radius) + 4px);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.18s ease;
+}
+/* カードが持ち上がるときは、光る枠も一緒に動かす */
+.hand--bottom > .cardbox:hover::after { transform: translateY(-14%) scale(1.05); }
+.hand--bottom > .cardbox.is-selected::after { transform: translateY(-20%) scale(1.08); }
+.zone .cardbox.is-selected::after { transform: scale(1.07); }
+.is-playable::after   { opacity: 1; box-shadow: 0 0 0 2px var(--glow), 0 0 14px var(--glow); }
+.can-attack::after    { opacity: 1; box-shadow: 0 0 0 2px var(--glow), 0 0 16px var(--glow); }
+.is-choice::after     { opacity: 1; box-shadow: 0 0 0 3px var(--choice), 0 0 20px var(--choice); }
+.is-target::after     { opacity: 1; box-shadow: 0 0 0 3px var(--target), 0 0 22px var(--target); }
+.is-battle::after     { opacity: 1; box-shadow: 0 0 0 3px var(--target), 0 0 26px var(--target); }
+.is-choice, .is-target, .can-attack { cursor: pointer; }
+.zone .cardbox.is-selected > .card {
+  transform: scale(1.07);
+  box-shadow: 0 0 0 3px var(--glow), 0 0 26px var(--glow);
+}
+
+/* ---- マナの玉 ---- */
+.mana__orb {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid var(--chalk-faint);
+  transition: background 0.3s, box-shadow 0.3s, border-color 0.3s;
+}
+.mana__orb.is-full {
+  border-color: #d8f1ff;
+  background: radial-gradient(circle at 35% 30%, #ffffff, var(--mana) 45%, #2f7fc0);
+  box-shadow: 0 0 8px rgba(143, 211, 255, 0.7);
+}
+.mana__orb.is-used {
+  border-color: rgba(143, 211, 255, 0.35);
+  background: var(--mana-used);
+}
+.mana__orb.is-locked { border-style: dashed; border-color: rgba(243, 239, 228, 0.35); }

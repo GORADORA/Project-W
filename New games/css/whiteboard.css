@@ -1,0 +1,417 @@
+/* ============================================================
+   ホワイトボードのデザイン(画面全体)
+   盤面・デッキ選択・案内の画面・サイドバーの見た目をまとめている。
+   デザインを変える時は、このファイルを書き換えればOK。
+   (base.css / layout.css / card.css は形や配置、このファイルは見た目の仕上げ)
+   ============================================================ */
+
+:root {
+  /* ---- ホワイトボードの色(眩しくないよう、少しグレーがかったマットな白) ---- */
+  --wb:            #eceef0;   /* 板の白 */
+  --wb-2:          #e1e4e8;   /* 板の下側(少し影) */
+  --paper:         #f4f4f2;   /* 盤面に貼る紙・ボタンの白(真っ白より少し落ち着いた色) */
+  --vignette:      rgba(55, 62, 74, 0.22);  /* 周りをくすませる強さ(ビネット) */
+
+  /* ---- アルミ(枠・サイドバー)。盤面とメリハリが出るよう、濃いめのグレー ---- */
+  --alu-light:     #9aa2ac;
+  --alu:           #6f7782;
+  --alu-dark:      #4c535c;
+
+  /* ---- マーカーの色 ---- */
+  --marker-black:  #2b2e36;
+  --marker-blue:   #1f5fd6;
+  --marker-red:    #e03131;
+  --marker-orange: #e8590c;
+  --marker-green:  #2b8a3e;
+  --marker-gray:   #8b93a3;
+
+  --font-marker: 'Yusei Magic', 'Yusei Magic Offline', 'Zen Maru Gothic', 'Zen Maru Gothic Offline', 'Yu Gothic', sans-serif;
+
+  /* ---- 画面全体の文字・線の色を、黒板のチョーク色からマーカー色に ---- */
+  --chalk:        var(--marker-black);
+  --chalk-dim:    #5a6070;
+  --chalk-faint:  rgba(43, 108, 212, 0.4);
+  --chalk-yellow: var(--marker-orange);
+  --glow:         #7048e8;   /* 使える・対決できる・選んでいるカードの光る枠(オレンジ・緑のカードと重ならない紫) */
+  --choice:       #1c7ed6;   /* 選べるカードの枠 */
+}
+
+/* ---- 画面全体:手書き風の字体。カードの中だけは読みやすい字体のまま ---- */
+body {
+  font-family: var(--font-marker);
+  color: var(--marker-black);
+  background: linear-gradient(180deg, #c9ced5, #b3b9c1);
+}
+.card { font-family: var(--font-ui); }
+
+/* ---- アルミの質感(細かいヘアライン) ---- */
+.table,
+.sidebar,
+.setup__panel,
+.modal {
+  --alu-texture: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 3px);
+}
+
+/* ---- 盤面の周りのアルミ枠 ---- */
+.table {
+  padding: 16px;
+  background:
+    var(--alu-texture),
+    linear-gradient(180deg, var(--alu-light), var(--alu) 45%, var(--alu-dark));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ---- ホワイトボードの板(マットな質感)。盤面・デッキ選択・案内の画面で共通 ---- */
+.board.whiteboard,
+.chalkboard,
+.overlay--curtain {
+  background:
+    /* ビネット:周りをふんわり暗くして、視線を真ん中に集める */
+    radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, var(--vignette) 100%),
+    /* マットな質感:ごく細かい粒を薄く重ねて、テカりを抑える */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.4 0 0 0 0 0.42 0 0 0 0 0.46 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    /* 光の反射の帯(2本。眩しくないよう、ごく薄く) */
+    linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, 0.28) 26%, rgba(255, 255, 255, 0.06) 31%, transparent 36%),
+    linear-gradient(112deg, transparent 58%, rgba(255, 255, 255, 0.18) 62%, transparent 67%),
+    /* うっすら残った消し跡 */
+    radial-gradient(ellipse 30% 12% at 24% 72%, rgba(110, 130, 165, 0.08), transparent),
+    radial-gradient(ellipse 22% 9% at 80% 28%, rgba(110, 130, 165, 0.07), transparent),
+    radial-gradient(ellipse 18% 8% at 62% 88%, rgba(110, 130, 165, 0.05), transparent),
+    linear-gradient(180deg, var(--wb), var(--wb-2));
+}
+.board.whiteboard {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.1),
+    inset 0 3px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- 手書き風の枠(先生ゾーン・空の山札や墓地) ----
+   角の丸みを少しずつ変えて、マーカーで描いたような歪みを出す */
+.zone__slot,
+.pile--empty {
+  border: 2.5px dashed rgba(43, 108, 212, 0.45);
+  border-radius: 14px 6px 12px 5px / 6px 12px 5px 14px;
+}
+.zone__slot:nth-child(2) { border-radius: 6px 13px 5px 12px / 12px 5px 14px 6px; }
+.zone__slot:nth-child(3) { border-radius: 12px 5px 14px 7px / 5px 14px 6px 12px; }
+.zone__slot:nth-child(4) { border-radius: 5px 12px 7px 14px / 14px 6px 12px 5px; }
+
+/* 墓地の暗いグラデーションは、白い板では薄く(空の時はなし) */
+.pile--trash::after { background: linear-gradient(180deg, transparent 55%, rgba(0, 0, 0, 0.18)); }
+.pile--trash.pile--empty::after { display: none; }
+
+/* ---- 真ん中の線:マーカーで引いた、少し波打つ線 ---- */
+.midline::before {
+  border-top: 0;
+  height: 14px;
+  top: calc(50% - 7px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 14' preserveAspectRatio='none'%3E%3Cpath d='M2 8 C120 5 260 10 400 7 S700 4 820 8 S960 9 998 6' fill='none' stroke='%231f5fd6' stroke-width='3' stroke-linecap='round' vector-effect='non-scaling-stroke' opacity='0.55'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+
+/* ---- 真ん中の案内文字:ボードにマーカーで書いたように ---- */
+.midline .status-text {
+  background: var(--wb);
+  border: 0;
+  box-shadow: none;
+  color: var(--marker-black);
+  font-family: var(--font-marker);
+  font-size: clamp(0.85rem, 1.8vw, 1.15rem);
+  padding: 2px 16px;
+}
+.midline .status-text.is-prompt { color: var(--marker-blue); }
+
+/* ---- 教室:マグネットで貼った付せん ---- */
+.field-chip {
+  position: relative;
+  background: linear-gradient(180deg, #fff6b3, #ffec80);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  transform: rotate(-2.5deg);
+  font-family: var(--font-marker);
+}
+.field-chip::before {
+  /* マグネット */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, var(--marker-red) 60%, #a51d1d);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- 盤面の文字(山札・墓地・プレイヤー名・マナ)は手書き風の字体 ---- */
+.pile__name,
+.nameplate,
+.mana__label {
+  font-family: var(--font-marker);
+}
+.nameplate b { color: var(--marker-black); }
+.nameplate.is-active b { color: var(--marker-red); }
+.mana__label { color: var(--marker-blue); }
+.mana__label b { font-family: var(--font-marker); color: var(--marker-blue); }
+.mana__extra { color: var(--marker-red); }
+
+/* ---- マナのトークン:マーカーで手書きした丸 ----
+   使える=青で塗った丸 / 使った=赤で×をした丸 / まだない=薄い点線の丸 */
+.mana__orb {
+  border: 0;
+  border-radius: 0;
+  background: center / 100% 100% no-repeat;
+  box-shadow: none;
+  transition: transform 0.2s;
+}
+/* 以前のデザイン(光る玉)の色・影を消す */
+.mana__orb.is-full,
+.mana__orb.is-used,
+.mana__orb.is-locked {
+  background-color: transparent;
+  box-shadow: none;
+  border: 0;
+  opacity: 1;
+}
+.mana__orb.is-full {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M21 4.5C31 4 36.5 11 36 20.5C35.5 30 28.5 36 19.5 35.8C10.5 35.5 4.2 29 4.5 19.8C4.8 11 11.5 4.8 22 5.5' fill='none' stroke='%231f5fd6' stroke-width='3.2' stroke-linecap='round'/%3E%3Cpath d='M11 13L25 8.5M7.5 20L31 11M8 27L33.5 17M12 32.5L34 24M20 35L30 31' stroke='%231f5fd6' stroke-width='3.4' stroke-linecap='round' opacity='0.8'/%3E%3C/svg%3E");
+}
+.mana__orb.is-used {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M21 4.5C31 4 36.5 11 36 20.5C35.5 30 28.5 36 19.5 35.8C10.5 35.5 4.2 29 4.5 19.8C4.8 11 11.5 4.8 22 5.5' fill='none' stroke='%238b93a3' stroke-width='3' stroke-linecap='round'/%3E%3Cpath d='M11 11.5L29.5 29M29 11L11.5 29.5' stroke='%23e03131' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.mana__orb.is-locked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M21 4.5C31 4 36.5 11 36 20.5C35.5 30 28.5 36 19.5 35.8C10.5 35.5 4.2 29 4.5 19.8C4.8 11 11.5 4.8 22 5.5' fill='none' stroke='%23b3bccb' stroke-width='2.4' stroke-linecap='round' stroke-dasharray='4 5'/%3E%3C/svg%3E");
+}
+/* 1つずつ少し角度を変えて、手で描いたばらつきを出す */
+.mana__orb:nth-child(3n + 1) { transform: rotate(-18deg); }
+.mana__orb:nth-child(3n + 2) { transform: rotate(27deg) scale(0.96); }
+.mana__orb:nth-child(4n)     { transform: rotate(95deg) scale(1.03); }
+.mana__orb:nth-child(5n)     { transform: rotate(-60deg); }
+
+/* ---- 場の先生のバッジ:ボードに貼ったマグネットシール風 ---- */
+.badge--sick  { background: #e7f0ff; color: var(--marker-blue); border: 1.5px solid rgba(31, 95, 214, 0.5); }
+.badge--spent { background: #f1f2f5; color: #5a6070; border: 1.5px solid #c8ccd4; }
+
+/* ---- 山札・サイドの影 ---- */
+.board.whiteboard .pile__stack { box-shadow:
+  calc(var(--depth, 0) * 1px) calc(var(--depth, 0) * 1px) 0 -1px var(--back-2),
+  calc(var(--depth, 0) * 2px) calc(var(--depth, 0) * 2px) 0 -1px var(--back-edge),
+  0 5px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* 暗い下地の上の文字は、白で固定(枚数の丸いラベル、処理中の札、対決の演出) */
+.pile__count { color: #fff; font-family: var(--font-ui); }
+.stack-spot__label { color: #ffe27a; }
+.clash__label { color: rgba(255, 255, 255, 0.85); }
+
+/* ============================================================
+   ボタン:ボードにマーカーで描いた札のような見た目
+   ============================================================ */
+.btn {
+  font-family: var(--font-marker);
+  font-weight: 400;
+  color: var(--marker-black);
+  background: var(--paper);
+  border: 2px solid var(--marker-black);
+  border-radius: 12px 6px 11px 5px / 6px 11px 5px 12px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
+}
+.btn:hover { background: #e8edf5; border-color: var(--marker-blue); }
+.btn--primary {
+  background: linear-gradient(180deg, #ffd23f, var(--back));
+  border-color: #b98c00;
+  color: #3a2a00;
+  box-shadow: 0 3px 0 #b98c00, 0 6px 14px rgba(185, 140, 0, 0.25);
+}
+.btn--primary:hover { background: linear-gradient(180deg, #ffe07a, #ffc719); border-color: #9a7400; }
+.btn--ghost { background: rgba(255, 255, 255, 0.7); border-color: #b5bcc8; color: #5a6070; box-shadow: none; }
+
+/* 見出しなどの「チョーク文字」は、マーカー文字に */
+.chalk-text {
+  font-family: var(--font-marker);
+  color: var(--marker-black);
+  text-shadow: none;
+}
+
+/* ============================================================
+   デッキ選択画面
+   ============================================================ */
+.setup__panel,
+.modal {
+  border: 14px solid transparent;
+  border-image: linear-gradient(160deg, var(--alu-light), var(--alu) 45%, var(--alu-dark)) 1;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+.modal { border-width: 10px; }
+.setup__title { color: var(--marker-blue); }
+.setup__player h2 { border-bottom: 2.5px solid rgba(31, 95, 214, 0.45); }
+.deck-option__body {
+  background: rgba(255, 255, 255, 0.75);
+  border: 2px dashed rgba(43, 108, 212, 0.4);
+  border-radius: 14px 6px 12px 5px / 6px 12px 5px 14px;
+}
+.deck-option:hover .deck-option__body { border-color: rgba(43, 108, 212, 0.7); }
+/* 選んだデッキは、黄色の蛍光ペンでなぞったように */
+.deck-option input:checked + .deck-option__body {
+  background: linear-gradient(180deg, transparent 8%, rgba(255, 224, 64, 0.55) 8%, rgba(255, 224, 64, 0.55) 92%, transparent 92%);
+  border: 2.5px solid var(--marker-orange);
+  box-shadow: none;
+}
+.setup__options select,
+.setup__ctrl {
+  font-family: var(--font-marker);
+  font-weight: 400;
+  background: var(--paper);
+  color: var(--marker-black);
+  border: 2px solid #9aa4b5;
+}
+/* 名前の入力欄 */
+.setup__name-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: #5a6070; }
+.setup__name {
+  flex: 1;
+  min-width: 0;
+  font: 1rem var(--font-marker);
+  padding: 6px 10px;
+  background: var(--paper);
+  color: var(--marker-black);
+  border: 2px solid #9aa4b5;
+  border-radius: 10px 5px 9px 4px / 5px 9px 4px 10px;
+}
+.setup__name:focus { outline: 2px solid var(--marker-blue); outline-offset: 1px; }
+.setup__options input[type="checkbox"],
+.confirm-skip input { accent-color: var(--marker-blue); }
+
+/* ============================================================
+   オンライン対戦の画面
+   ============================================================ */
+.setup__online { display: flex; justify-content: center; margin-top: 14px; }
+/* 先生の名前・画像(非公開)の状態と合言葉の欄:目立ちすぎないよう小さめ */
+.setup__private {
+  display: flex; flex-wrap: wrap; gap: 8px 12px; justify-content: center; align-items: center;
+  margin-top: 12px; font-size: 0.85rem; color: #5b6272;
+}
+.setup__private:empty { display: none; }
+.setup__private-form { display: flex; gap: 8px; align-items: center; }
+.setup__private .online__input { width: 150px; font-size: 0.95rem; padding: 4px 10px; }
+.setup__private-error { color: var(--marker-red); width: 100%; text-align: center; }
+.setup__version { margin: 8px 0 0; text-align: center; font-size: 0.7rem; color: #8a92a2; letter-spacing: 0.05em; }
+.online { max-width: 760px; }
+.online__lead { text-align: center; color: #4a505e; margin: 8px 0 18px; line-height: 1.7; }
+.online__row { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+.online__input {
+  font: 1.1rem var(--font-marker);
+  padding: 8px 12px;
+  width: 220px;
+  background: var(--paper);
+  color: var(--marker-black);
+  border: 2px solid #9aa4b5;
+  border-radius: 10px 5px 9px 4px / 5px 9px 4px 10px;
+}
+.online__input:focus { outline: 2px solid var(--marker-blue); outline-offset: 1px; }
+.online__input--code { width: 120px; text-align: center; letter-spacing: 0.25em; text-transform: uppercase; font-size: 1.4rem; }
+.online__decks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+.online__cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.online__box {
+  padding: 14px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px dashed rgba(43, 108, 212, 0.4);
+  border-radius: 14px 6px 12px 5px / 6px 12px 5px 14px;
+}
+.online__box h3 { margin: 0 0 6px; color: var(--marker-blue); font-weight: 400; }
+.online__box p { margin: 0 0 12px; color: #5a6070; font-size: 0.9rem; }
+.online__code {
+  text-align: center;
+  font: 4rem / 1 var(--font-card-num);
+  letter-spacing: 0.2em;
+  color: var(--marker-blue);
+  margin: 10px 0;
+}
+.online__wait { text-align: center; color: #5a6070; animation: pulse 1.6s ease-in-out infinite; }
+.online__error { text-align: center; color: var(--marker-red); }
+
+/* ============================================================
+   案内の画面(引き直し・勝敗・墓地一覧・降参・ターン終了の確認・交代画面)
+   ============================================================ */
+.overlay:not(.overlay--curtain) { background: rgba(40, 46, 56, 0.45); }
+.gameover__title { color: var(--marker-red) !important; }
+.curtain__who { color: var(--marker-blue); }
+
+/* ============================================================
+   右のサイドバー:アルミ。カード詳細とログは明るいパネルをはめ込む
+   ============================================================ */
+.sidebar {
+  background:
+    var(--alu-texture),
+    linear-gradient(180deg, var(--alu-light), var(--alu) 50%, var(--alu-dark));
+  border-left: 1px solid rgba(0, 0, 0, 0.35);
+  padding-bottom: 10px;
+}
+.preview {
+  margin: 10px 10px 0;
+  border-radius: 10px;
+  border-bottom: 0;
+  background: linear-gradient(180deg, #eef1f4, #dde2e8);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.25), 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+.preview__empty { color: #6b7280; }
+/* フレーバーテキスト:マーカーで書いた一言のような、控えめな引用 */
+.preview__flavor {
+  color: #4a505e;
+  padding: 6px 12px;
+  border-left: 3px solid rgba(240, 106, 29, 0.55);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.45);
+  font-style: italic;
+}
+.preview__flavor::before { content: '“'; }
+.preview__flavor::after  { content: '”'; }
+.sidebar__head h2 { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.log {
+  margin: 0 10px;
+  border-radius: 10px;
+  padding-top: 8px;
+  background: var(--wb);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
+  color: #4a505e;
+}
+.log li.is-turn { color: var(--marker-blue); }
+.log li:last-child { color: var(--marker-black); }
+
+/* ============================================================
+   盤面の上に出る画面:ボードに貼った白い紙
+   ============================================================ */
+.duel-backdrop { background: rgba(40, 46, 56, 0.35); backdrop-filter: blur(1.5px); }
+
+.choice,
+.duel,
+.trash-pick {
+  background: var(--paper);
+  color: var(--marker-black);
+  border-radius: 16px 8px 14px 7px / 8px 14px 7px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+.choice     { border: 3px solid var(--marker-blue); }
+.trash-pick { border: 3px solid var(--marker-blue); }
+.duel       { border: 3px solid var(--marker-red); }
+.duel__title,
+.duel__vs { color: var(--marker-red); text-shadow: none; }
+.duel__side { color: #5a6070; }
+.duel__option.is-counter { border-color: var(--marker-orange); }
+.duel__option.is-counter:hover { background: #fff4e6; }
+.duel__hint.is-win  { color: var(--marker-green); }
+.duel__hint.is-lose { color: var(--marker-red); }
+.duel__hint.is-draw { color: var(--marker-orange); }
+.trash-pick__sub { color: #5a6070; }
+
+/* ターン開始の帯:白い紙の帯にマーカーで書いたように */
+.banner {
+  font-family: var(--font-marker);
+  color: var(--marker-black);
+  text-shadow: none;
+  background: linear-gradient(90deg, transparent, rgba(244, 244, 242, 0.97) 18%, rgba(244, 244, 242, 0.97) 82%, transparent);
+  border-block: 3px solid rgba(31, 95, 214, 0.55);
+}

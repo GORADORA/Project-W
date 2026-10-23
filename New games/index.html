@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>センセイバトル</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Klee+One:wght@400;600&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- ネットがない時の予備のフォント(ふだんは読み込まれない) -->
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/card.css">
+  <link rel="stylesheet" href="css/animation.css">
+  <!-- ホワイトボードのデザイン(画面全体の見た目)。デザインを変える時はこのファイルを変える -->
+  <link rel="stylesheet" href="css/whiteboard.css">
+</head>
+<body>
+  <!-- デッキ選択画面 -->
+  <main id="setup" class="setup"></main>
+
+  <!-- 対戦画面 -->
+  <main id="game" class="game" hidden>
+    <div class="table">
+      <div id="board" class="board whiteboard"></div>
+    </div>
+    <aside class="sidebar">
+      <div id="preview" class="preview"></div>
+      <div class="sidebar__head">
+        <h2>ログ</h2>
+        <div class="sidebar__buttons">
+          <button class="btn btn--ghost btn--small" data-act="toggle-sfx" id="sfx-toggle">効果音:オン</button>
+          <button class="btn btn--ghost btn--small" data-act="toggle-bgm" id="bgm-toggle">BGM:オフ</button>
+          <button class="btn btn--ghost btn--small" data-act="concede">降参</button>
+        </div>
+      </div>
+      <ol id="log" class="log"></ol>
+    </aside>
+  </main>
+
+  <!-- 演出用のレイヤー -->
+  <div id="fx" class="fx-layer"></div>
+
+  <!-- 全画面の案内(交代画面・マリガンなど) -->
+  <div id="overlay" class="overlay" hidden></div>
+
+  <script>
+    // ダブルクリックで開いた時は動かないので、理由を画面に出す
+    if (location.protocol === 'file:') {
+      document.getElementById('setup').innerHTML =
+        '<p style="margin:40px auto;max-width:640px;padding:24px;background:#fff;color:#c92a2a;border-radius:12px;font:16px/1.8 sans-serif">' +
+        'このゲームはダブルクリックでは動きません。<br>サーバーを立ち上げて、ブラウザで <b>http://localhost:8080</b> を開いてください(管理マニュアル3章)。</p>';
+    }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

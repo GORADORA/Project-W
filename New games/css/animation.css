@@ -1,0 +1,254 @@
+/* ============================================================
+   演出
+   カードの移動そのものは js/ui/animate.js が担当し、
+   ここでは「光る」「揺れる」などの見た目を定義している
+   ============================================================ */
+
+/* ---- 光る枠の点滅 ---- */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+.is-playable::after,
+.can-attack::after { animation: pulse 1.6s ease-in-out infinite; }
+.is-choice::after,
+.is-target::after,
+.is-battle::after  { animation: pulse 0.9s ease-in-out infinite; }
+
+/* ---- 演出用のレイヤー(画面全体の上に重ねる) ---- */
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+/* 移動中のカードの分身 */
+.ghost {
+  position: fixed;
+  margin: 0;
+  z-index: 41;
+}
+
+/* ---- プレイしたカードを中央に大きく表示 ---- */
+.reveal {
+  --reveal-h: min(64dvh, calc(var(--card-h) * 2.6));
+  --reveal-w: calc(var(--reveal-h) / 1.4);
+  position: fixed;
+  left: calc((100vw - var(--sidebar-w) - var(--reveal-w)) / 2);
+  top: calc((100dvh - var(--reveal-h)) / 2);
+  width: var(--reveal-w);
+  height: var(--reveal-h);
+  z-index: 45;
+}
+/* 後ろで回る光 */
+.reveal::before {
+  content: '';
+  position: absolute;
+  inset: -14%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg, rgba(255, 226, 122, 0.95) 40deg, transparent 90deg,
+    rgba(255, 255, 255, 0.85) 150deg, transparent 200deg,
+    rgba(255, 226, 122, 0.95) 260deg, transparent 320deg
+  );
+  filter: blur(22px);
+  opacity: 0;
+  animation: reveal-spin 1.4s linear infinite;
+  transition: opacity 0.3s;
+}
+.reveal.is-shining::before { opacity: 0.9; }
+.reveal.is-leaving::before { opacity: 0; transition-duration: 0.2s; }
+.reveal > .card {
+  box-shadow:
+    0 0 0 3px #fff6cf,
+    0 0 36px rgba(255, 226, 122, 0.9),
+    0 24px 60px rgba(0, 0, 0, 0.6);
+}
+.reveal.is-shining > .card { animation: reveal-flash 0.7s ease-out; }
+@keyframes reveal-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes reveal-flash {
+  0%   { filter: brightness(1.7); }
+  100% { filter: brightness(1); }
+}
+
+/* ---- 撃破された時:赤く光って揺れる ---- */
+@keyframes hit {
+  0%   { transform: translateX(0);     filter: none; }
+  15%  { transform: translateX(-7%);   filter: brightness(1.6) drop-shadow(0 0 12px var(--debuff)); }
+  30%  { transform: translateX(6%); }
+  45%  { transform: translateX(-4%);   filter: brightness(1.3) drop-shadow(0 0 16px var(--debuff)); }
+  60%  { transform: translateX(3%); }
+  100% { transform: translateX(0) scale(0.92); filter: brightness(0.6) grayscale(0.6); }
+}
+.is-hit > .card { animation: hit 0.5s ease-out forwards; }
+
+/* ---- ターン開始の帯 ---- */
+.banner {
+  position: fixed;
+  left: 0;
+  width: calc(100vw - var(--sidebar-w));
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 46;
+  padding: 18px 0;
+  text-align: center;
+  font-family: var(--font-chalk);
+  font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 600;
+  color: var(--chalk);
+  background: linear-gradient(90deg, transparent, rgba(20, 32, 26, 0.94) 20%, rgba(20, 32, 26, 0.94) 80%, transparent);
+  border-block: 2px solid rgba(255, 226, 122, 0.6);
+  text-shadow: 0 0 12px rgba(255, 226, 122, 0.5);
+  animation: banner 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes banner {
+  0%   { opacity: 0; clip-path: inset(0 50% 0 50%); }
+  18%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  78%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 0 0 0); }
+}
+
+/* ---- 全画面の案内が出るとき ---- */
+.overlay { animation: fade-in 0.25s ease-out; }
+.overlay .modal { animation: pop-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes pop-in  { from { opacity: 0; transform: translateY(16px) scale(0.96); } }
+
+/* ---- 選択パネル ---- */
+.choice { animation: fade-in 0.2s ease-out; }
+
+/* ---- お知らせ(教室の効果など) ---- */
+.toasts {
+  position: fixed;
+  top: 14px;
+  left: calc((100vw - var(--sidebar-w)) / 2);
+  translate: -50% 0;
+  z-index: 47;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(520px, calc(100vw - var(--sidebar-w) - 32px));
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7ecd0, #e5d2a8);
+  color: var(--ink);
+  box-shadow: 0 3px 0 #9b8559, 0 10px 28px rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  animation: toast-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.toast b {
+  flex: none;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--wood);
+  color: #fff4dc;
+  font-size: 0.8rem;
+}
+.toast.is-leaving { opacity: 0; transform: translateY(-8px); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-14px) scale(0.96); } }
+
+/* ---- 対決の結果 ---- */
+.clash {
+  --clash-h: min(46dvh, calc(var(--card-h) * 2));
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: calc(100vw - var(--sidebar-w));
+  height: 100dvh;
+  z-index: 45;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(16px, 4vw, 56px);
+  background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.72), rgba(10, 8, 6, 0.35) 70%);
+  animation: fade-in 0.25s ease-out;
+  transition: opacity 0.25s;
+}
+.clash.is-leaving { opacity: 0; }
+.clash__side {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.clash__side.is-left  { animation: clash-in-left 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+.clash__side.is-right { animation: clash-in-right 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+.clash__label { color: var(--chalk-dim); font-size: 0.85rem; }
+.clash__card {
+  height: var(--clash-h);
+  aspect-ratio: 5 / 7;
+  transition: filter 0.3s, transform 0.3s;
+}
+.clash__power {
+  font: 900 clamp(1.4rem, 3.4vw, 2.4rem) / 1 var(--font-ui);
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+.clash__vs {
+  font-family: var(--font-chalk);
+  font-size: clamp(1.8rem, 5vw, 3.2rem);
+  font-weight: 600;
+  color: var(--target);
+  text-shadow: 0 0 18px rgba(255, 107, 107, 0.6);
+}
+/* ぶつかる瞬間 */
+.clash.is-hit .is-left  .clash__card { animation: clash-hit-left 0.38s ease-out; }
+.clash.is-hit .is-right .clash__card { animation: clash-hit-right 0.38s ease-out; }
+/* 結果:撃破された側は暗く傾く */
+.clash.is-result .is-down .clash__card { filter: grayscale(0.8) brightness(0.45); transform: rotate(-6deg) scale(0.94); }
+.clash__stamp {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  padding: 6px 18px;
+  border: 4px solid currentColor;
+  border-radius: 12px;
+  font: 900 clamp(1.4rem, 3.6vw, 2.6rem) / 1 var(--font-ui);
+  background: rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(-12deg) scale(2.2);
+}
+.clash.is-result .clash__stamp {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(-12deg) scale(1);
+  transition: opacity 0.18s ease-out, transform 0.28s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.clash__stamp.is-win   { color: var(--chalk-yellow); box-shadow: 0 0 30px rgba(255, 226, 122, 0.6); }
+.clash__stamp.is-lose  { color: var(--debuff); }
+.clash__stamp.is-guard { color: var(--gold); }
+.clash__stamp.is-null  { color: var(--choice); }
+@keyframes clash-in-left  { from { opacity: 0; transform: translateX(-60px); } }
+@keyframes clash-in-right { from { opacity: 0; transform: translateX(60px); } }
+@keyframes clash-hit-left {
+  0% { transform: none; }
+  40% { transform: translateX(28%) rotate(4deg); }
+  100% { transform: none; }
+}
+@keyframes clash-hit-right {
+  0% { transform: none; }
+  40% { transform: translateX(-28%) rotate(-4deg); }
+  100% { transform: none; }
+}
+
+/* 動きを減らす設定の人には、演出を控えめに */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>勝率シミュレーター</title>
+  <style>
+    :root {
+      --bg: #1b2a22; --panel: #22382d; --line: rgba(243, 239, 228, 0.16);
+      --fg: #f3efe4; --dim: rgba(243, 239, 228, 0.62); --accent: #ffe27a;
+      --good: 110, 231, 154; --bad: 255, 123, 123;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'Zen Maru Gothic', 'Yu Gothic', system-ui, sans-serif; }
+    main { max-width: 880px; margin: 0 auto; padding: 28px 16px 60px; }
+    h1 { margin: 0 0 4px; font-size: 1.6rem; }
+    .lead { margin: 0 0 24px; color: var(--dim); line-height: 1.7; font-size: 0.92rem; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
+    label { color: var(--dim); }
+    select { font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; }
+    button { font: 700 1rem/1 inherit; font-family: inherit; padding: 0.7em 1.8em; border-radius: 999px; border: 0; cursor: pointer;
+      background: var(--accent); color: #3a2a10; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    .progress { height: 8px; border-radius: 999px; background: var(--bg); overflow: hidden; margin-top: 14px; }
+    .progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+    .status { margin-top: 8px; color: var(--dim); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; }
+    .note { color: var(--dim); font-size: 0.8rem; margin: 10px 0 0; line-height: 1.6; }
+    .scroll { overflow-x: auto; }
+    table { border-collapse: separate; border-spacing: 4px; width: 100%; font-variant-numeric: tabular-nums; }
+    th { font-weight: 700; color: var(--dim); font-size: 0.85rem; padding: 6px; text-align: center; }
+    th.row { text-align: right; white-space: nowrap; }
+    td.cell { text-align: center; padding: 12px 6px; border-radius: 8px; font-weight: 700; font-size: 1.15rem; }
+    td.cell small { display: block; font-weight: 400; font-size: 0.72rem; color: var(--dim); margin-top: 2px; }
+    td.mirror { color: var(--dim); background: rgba(255, 255, 255, 0.04); font-size: 0.85rem; font-weight: 400; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+    .stat { background: var(--bg); border-radius: 10px; padding: 12px 14px; }
+    .stat b { display: block; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+    .stat span { color: var(--dim); font-size: 0.8rem; }
+    .experiment { margin-top: 16px; }
+    .experiment summary { cursor: pointer; color: var(--dim); }
+    .experiment__inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+    .experiment__inputs label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+    .experiment__inputs input { font: inherit; background: var(--bg); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+    .cards h3 { margin: 0 0 6px; font-size: 0.95rem; }
+    .cards table { border-spacing: 0; font-size: 0.82rem; }
+    .cards th, .cards td { padding: 4px 6px; text-align: right; border-bottom: 1px solid var(--line); }
+    .cards th:first-child, .cards td:first-child { text-align: left; }
+    .cards td.hi { color: rgb(var(--good)); font-weight: 700; }
+    .cards td.lo { color: rgb(var(--bad)); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>勝率シミュレーター</h1>
+  <p class="lead">
+    コンピュータ同士で3つのデッキを戦わせて、勝率を出します。<br>
+    コンピュータは「その場で一番得になる行動」を選ぶだけの簡単な作りなので、数字は<b>目安</b>です。
+    カードの数値を変えたら、このページを読み込み直して再実行すると比較できます。
+  </p>
+
+  <div class="panel">
+    <div class="controls">
+      <label>1組あたりの試合数
+        <select id="games">
+          <option value="50">50戦(速い)</option>
+          <option value="200" selected>200戦</option>
+          <option value="500">500戦(正確)</option>
+        </select>
+      </label>
+      <label>教室
+        <select id="field">
+          <option value="">ランダム</option>
+          <option value="F1">体育館のみ</option>
+          <option value="F4">購買のみ</option>
+          <option value="F5">保健室のみ</option>
+        </select>
+      </label>
+      <button id="run">実行</button>
+    </div>
+    <details class="experiment">
+      <summary>実験:特定のカードを使わせない</summary>
+      <p class="note">カードIDをスペース区切りで入力すると、そのデッキのコンピュータはそのカードを使わなくなります
+        (手札に来ても使わない=何もしないカード扱い)。そのカードがどれだけ勝率に貢献しているかを調べられます。</p>
+      <div class="experiment__inputs" id="bans"></div>
+    </details>
+    <div class="progress"><div id="bar"></div></div>
+    <div class="status" id="status">待機中</div>
+  </div>
+
+  <div id="results" hidden>
+    <div class="panel">
+      <h2>デッキ同士の勝率(縦のデッキから見た勝率)</h2>
+      <div class="scroll"><table id="matrix"></table></div>
+      <p class="note">例:「速攻型」の行・「耐久型」の列が 30% なら、速攻型は耐久型に 30% 勝つ(70% 負ける)。<br>
+        同じデッキ同士の欄には、先攻の勝率を表示しています。引き分け(60ターン経過)は勝率の計算から除いています。</p>
+    </div>
+    <div class="panel">
+      <h2>全体</h2>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="panel">
+      <h2>カードごとの影響(違うデッキとの対戦のみ)</h2>
+      <div class="cards" id="cards"></div>
+      <p class="note">「使った試合の勝率」が「使わなかった試合の勝率」より大きく高いカードほど、勝敗を左右していると考えられます。
+        ただし、試合が長引くほど多くのカードが使われるため、重いカードは数字が偏りやすい点に注意してください。<br>
+        「初使用ターン」は、そのカードを試合中に初めて使ったターンの平均です(両者のターンを合わせて数えます)。<br>
+        カードの本当の貢献度を知りたいときは、上の「実験」でそのカードを使わせずに実行し、勝率の変化を比べるのが確実です。</p>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  import { DECKS } from '../js/data/decks.js';
+
+  const keys = Object.keys(DECKS);
+  const $ = (id) => document.getElementById(id);
+
+  $('bans').innerHTML = keys.map((k) =>
+    `<label>${DECKS[k].name}<input data-deck="${k}" placeholder="例:S1 S3"></label>`).join('');
+  const readBans = () => Object.fromEntries(keys.map((k) => [k,
+    document.querySelector(`#bans input[data-deck="${k}"]`).value.trim().toUpperCase().split(/[\s,、]+/).filter(Boolean)]));
+
+  $('run').onclick = () => {
+    const n = Number($('games').value);
+    const field = $('field').value || null;
+    const bans = readBans();
+
+    // 対戦の組み合わせ(同じデッキ同士も含む)
+    const jobs = [];
+    let seed = 1;
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i; j < keys.length; j++) {
+        const banned = [bans[keys[i]], bans[keys[j]]];
+        for (let g = 0; g < n; g++) jobs.push({ decks: [keys[i], keys[j]], seed: seed++, field, banned });
+      }
+    }
+
+    // パソコンの性能に合わせて、複数の作業場で同時に動かす
+    const workerCount = Math.max(1, Math.min(8, (navigator.hardwareConcurrency || 4) - 1));
+    const results = [];
+    let doneWorkers = 0;
+    const t0 = performance.now();
+    $('run').disabled = true;
+
+    for (let w = 0; w < workerCount; w++) {
+      const worker = new Worker('../js/sim/worker.js', { type: 'module' });
+      worker.onmessage = (e) => {
+        if (e.data.type === 'result') {
+          results.push(e.data);
+          const rate = results.length / jobs.length;
+          const sec = (performance.now() - t0) / 1000;
+          $('bar').style.width = `${rate * 100}%`;
+          $('status').textContent = `${results.length} / ${jobs.length} 試合  (経過 ${sec.toFixed(0)}秒・残り約 ${(sec / rate - sec).toFixed(0)}秒)`;
+          if (results.length % 20 === 0) show(results);
+        } else if (e.data.type === 'done') {
+          worker.terminate();
+          if (++doneWorkers === workerCount) {
+            show(results);
+            $('status').textContent = `完了:${results.length} 試合(${((performance.now() - t0) / 1000).toFixed(1)}秒)`;
+            $('run').disabled = false;
+            window.simResults = summarize(results);
+          }
+        }
+      };
+      worker.onerror = (e) => { $('status').textContent = `エラー:${e.message}`; };
+      worker.postMessage({ jobs: jobs.filter((_, k) => k % workerCount === w) });
+    }
+  };
+
+  // 集計
+  function summarize(results) {
+    const pair = {};       // 'a|b' → { wins: {a, b}, draws, games, turns }
+    const deck = {};       // デッキごとの総合勝敗
+    const card = {};       // デッキ → カードID → { used, usedWins }
+    let firstWins = 0, decided = 0, turns = 0, draws = 0;
+    for (const k of keys) {
+      deck[k] = { w: 0, l: 0 };
+      card[k] = {};
+      for (const id of Object.keys(DECKS[k].cards)) card[k][id] = { used: 0, usedWins: 0, turnSum: 0 };
+    }
+
+    for (const { job, result } of results) {
+      const [a, b] = job.decks;
+      const key = `${a}|${b}`;
+      pair[key] ??= { a, b, winsA: 0, winsB: 0, draws: 0, firstWins: 0, games: 0 };
+      const p = pair[key];
+      p.games++;
+      turns += result.turns;
+      if (result.winner === null) { p.draws++; draws++; continue; }
+      decided++;
+      if (result.winner === result.first) { firstWins++; p.firstWins++; }
+      if (a === b) continue;
+      const winDeck = job.decks[result.winner];
+      const loseDeck = job.decks[1 - result.winner];
+      if (winDeck === a) p.winsA++; else p.winsB++;
+      deck[winDeck].w++;
+      deck[loseDeck].l++;
+      for (const pl of [0, 1]) {
+        for (const [id, turn] of result.used[pl]) {
+          const c = card[job.decks[pl]][id];
+          c.used++;
+          c.turnSum += turn;
+          if (result.winner === pl) c.usedWins++;
+        }
+      }
+    }
+    return { pair, deck, card, firstWins, decided, turns, draws, total: results.length };
+  }
+
+  function show(results) {
+    const s = summarize(results);
+    $('results').hidden = false;
+
+    const color = (rate) => {
+      // 50% を中心に、高いほど緑・低いほど赤
+      const d = Math.min(1, Math.abs(rate - 0.5) * 2.5);
+      return `background: rgba(var(${rate >= 0.5 ? '--good' : '--bad'}), ${0.08 + d * 0.42})`;
+    };
+
+    let html = `<tr><th></th>${keys.map((k) => `<th>${DECKS[k].name}</th>`).join('')}</tr>`;
+    for (const r of keys) {
+      html += `<tr><th class="row">${DECKS[r].name}</th>`;
+      for (const c of keys) {
+        const p = s.pair[`${r}|${c}`] ?? s.pair[`${c}|${r}`];
+        if (!p) { html += '<td class="cell mirror">…</td>'; continue; }
+        if (r === c) {
+          const dec = p.games - p.draws;
+          html += `<td class="cell mirror">先攻 ${dec ? Math.round((p.firstWins / dec) * 100) : '-'}%<small>${p.games}戦</small></td>`;
+          continue;
+        }
+        const wins = p.a === r ? p.winsA : p.winsB;
+        const dec = p.winsA + p.winsB;
+        const rate = dec ? wins / dec : 0.5;
+        html += `<td class="cell" style="${color(rate)}">${Math.round(rate * 100)}%<small>${wins}勝 ${dec - wins}敗${p.draws ? ` 引分${p.draws}` : ''}</small></td>`;
+      }
+      html += '</tr>';
+    }
+    $('matrix').innerHTML = html;
+
+    const stat = (label, value) => `<div class="stat"><span>${label}</span><b>${value}</b></div>`;
+    $('stats').innerHTML =
+      keys.map((k) => {
+        const d = s.deck[k];
+        const t = d.w + d.l;
+        return stat(`${DECKS[k].name}の総合勝率`, t ? `${Math.round((d.w / t) * 100)}%` : '-');
+      }).join('')
+      + stat('先攻の勝率', s.decided ? `${Math.round((s.firstWins / s.decided) * 100)}%` : '-')
+      + stat('平均ターン数', (s.turns / s.total).toFixed(1))
+      + stat('引き分け', `${s.draws}戦`);
+
+    // カードごとの影響
+    const pct = (a, b) => (b ? Math.round((a / b) * 100) : null);
+    $('cards').innerHTML = keys.map((k) => {
+      const games = s.deck[k].w + s.deck[k].l;
+      const rows = Object.entries(s.card[k]).map(([id, c]) => {
+        const unused = games - c.used;
+        const withRate = pct(c.usedWins, c.used);
+        const withoutRate = pct(s.deck[k].w - c.usedWins, unused);
+        const diff = withRate !== null && withoutRate !== null ? withRate - withoutRate : 0;
+        return `<tr><td>${id}</td><td>${pct(c.used, games) ?? '-'}%</td>
+          <td>${c.used ? (c.turnSum / c.used).toFixed(1) : '-'}</td>
+          <td class="${diff >= 15 ? 'hi' : diff <= -15 ? 'lo' : ''}">${withRate ?? '-'}%</td>
+          <td>${withoutRate ?? '-'}%</td></tr>`;
+      }).join('');
+      return `<div><h3>${DECKS[k].name}</h3><table>
+        <tr><th>カード</th><th>使用率</th><th>初使用ターン</th><th>使った試合の勝率</th><th>使わなかった試合</th></tr>${rows}</table></div>`;
+    }).join('');
+  }
+</script>
+</body>
+</html>

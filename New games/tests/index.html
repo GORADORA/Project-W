@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>エンジンのテスト</title>
+  <style>
+    :root { --bg: #f7f7f5; --fg: #222; --ok: #1a7f37; --ng: #c62828; --muted: #777; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #1b1b1d; --fg: #eee; --ok: #4ac26b; --ng: #ff6b6b; --muted: #999; }
+    }
+    body { background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; margin: 0; padding: 24px 16px; }
+    main { max-width: 760px; margin: 0 auto; }
+    h1 { font-size: 1.3rem; }
+    #summary { font-size: 1.1rem; font-weight: bold; margin-bottom: 16px; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); }
+    .ok::before { content: '✔ '; color: var(--ok); }
+    .ng::before { content: '✘ '; color: var(--ng); }
+    .err { color: var(--ng); font-size: 0.9rem; margin-left: 1.4em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>ルールエンジンのテスト</h1>
+    <div id="summary">実行中…(ランダム対戦に数秒かかります)</div>
+    <ul id="list"></ul>
+  </main>
+  <script type="module">
+    const { results } = await import('./engine.test.js');
+    const ng = results.filter((r) => !r.ok).length;
+    document.getElementById('summary').textContent =
+      ng === 0 ? `すべて成功(${results.length}件)` : `${ng}件 失敗 / 全${results.length}件`;
+    document.getElementById('summary').style.color = ng === 0 ? 'var(--ok)' : 'var(--ng)';
+    const list = document.getElementById('list');
+    for (const r of results) {
+      const li = document.createElement('li');
+      li.className = r.ok ? 'ok' : 'ng';
+      li.textContent = r.name;
+      if (!r.ok) {
+        const e = document.createElement('div');
+        e.className = 'err';
+        e.textContent = r.error;
+        li.appendChild(e);
+      }
+      list.appendChild(li);
+    }
+    window.testResults = results;
+  </script>
+</body>
+</html>
