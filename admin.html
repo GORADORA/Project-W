@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>先生TCG 名前・画像の登録</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Klee+One:wght@400;600&family=Yusei+Magic&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- カードの見た目はゲームと同じものを使う(登録しながら、実際の見え方を確かめられる) -->
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/card.css">
+  <style>
+    /* ゲーム用の「画面いっぱい・スクロールなし」をやめて、普通のページにする */
+    html, body { height: auto; }
+    body {
+      overflow: auto; user-select: auto; background: #eef0f4; color: #1f2430;
+      font: 15px/1.7 "Zen Maru Gothic", "Yu Gothic UI", sans-serif;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 80px; }
+    h1 { margin: 0 0 4px; font-size: 26px; }
+    .lead { margin: 0 0 16px; color: #555d6e; }
+    .box { background: #fff; border: 1px solid #d9dde5; border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input[type="text"], input[type="password"] {
+      font: inherit; padding: 6px 10px; border: 1px solid #aab2c0; border-radius: 6px; min-width: 0;
+    }
+    .abtn {
+      font: inherit; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      border: 1px solid #aab2c0; background: #f6f7f9; color: #1f2430;
+    }
+    .abtn:hover { background: #e9ecf1; }
+    .abtn--main { background: #f06a1d; border-color: #d65a12; color: #fff; }
+    .abtn--main:hover { background: #d65a12; }
+    .abtn--danger { color: #c92a2a; }
+    .abtn:disabled { opacity: 0.4; cursor: default; }
+    .msg { min-height: 1.7em; font-weight: 700; }
+    .msg.is-error { color: #c92a2a; }
+    .msg.is-ok { color: #2b8a3e; }
+    .note { font-size: 13px; color: #5b6475; }
+    h2 { font-size: 19px; margin: 24px 0 10px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+    .item { display: grid; grid-template-columns: 130px 1fr; gap: 12px; background: #fff;
+      border: 1px solid #d9dde5; border-radius: 10px; padding: 12px; }
+    .item.is-changed { border-color: #f06a1d; box-shadow: 0 0 0 2px rgba(240, 106, 29, 0.25); }
+    .item .cardbox { width: 130px; height: 182px; }
+    .item__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .item__id { font-weight: 900; font-size: 17px; }
+    .item__id small { font-weight: 500; color: #5b6475; font-size: 13px; }
+    .item__body input[type="text"], .item__body textarea { width: 100%; }
+    textarea { font: inherit; padding: 6px 10px; border: 1px solid #aab2c0; border-radius: 6px; resize: vertical; }
+    .item__side { display: flex; flex-direction: column; gap: 6px; }
+    .item__flavor { margin: 0; font-size: 12px; line-height: 1.5; color: #4a505e; font-style: italic; text-align: center; }
+    .item__body label { font-size: 13px; color: #5b6475; }
+    .item__file { font-size: 13px; max-width: 100%; }
+    .item__buttons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>先生TCG 名前・画像の登録</h1>
+  <p class="lead">ここで登録した名前・画像は、<b>合言葉を入れた人にだけ</b>ゲームで表示されます(公開サイトのファイルには含まれません)。</p>
+
+  <!-- 管理者パスワードの入力(プレイヤー用の合言葉とは別物) -->
+  <div class="box" id="login-box" hidden>
+    <form class="row" id="login-form">
+      <span>管理者パスワード:</span>
+      <input type="password" id="password" autocomplete="current-password" required>
+      <button class="abtn abtn--main" type="submit">ログイン</button>
+    </form>
+  </div>
+
+  <div class="box" id="status-box">
+    <div class="row">
+      <div class="msg" id="msg">読み込んでいます…</div>
+      <button class="abtn" id="logout" hidden>ログアウト</button>
+    </div>
+    <p class="note">
+      ・名前:空にして保存すると、公開の名前(カードID)に戻ります。4文字までが一番大きく表示されます。<br>
+      ・フレーバーテキスト:ゲームでは、右のカード詳細でカードの下に小さく表示されます(長いと4行で切れます)。<br>
+      ・画像:選ぶと自動で横860×縦500に切り抜いて小さくします(真ん中が残ります)。保存するまでは登録されません。<br>
+      ・保存すると、ゲームを開いている人は次にページを開いた時(または再読み込みした時)に新しい内容になります。
+    </p>
+  </div>
+
+  <div id="editor" hidden>
+    <h2>先生カード</h2>
+    <div class="cards" id="teachers"></div>
+    <h2>授業カード</h2>
+    <div class="cards" id="lessons"></div>
+  </div>
+</div>
+<script>
+  // うまく動かない時に、理由を画面に出す(このスクリプトは、ダブルクリックで開いても動く)
+  (function () {
+    var msg = document.getElementById('msg');
+    var show = function (text) { msg.textContent = text; msg.className = 'msg is-error'; };
+    if (location.protocol === 'file:') {
+      show('このページはダブルクリックでは動きません。サーバーを立ち上げて、ブラウザで http://localhost:8080/admin.html を開いてください(マニュアル3章)');
+      return;
+    }
+    window.addEventListener('error', function (e) { show('エラーで止まりました:' + (e.message || '') + '(ページを再読み込みしてみてください)'); });
+    window.addEventListener('unhandledrejection', function (e) { show('エラーで止まりました:' + ((e.reason && e.reason.message) || e.reason || '') + '(ページを再読み込みしてみてください)'); });
+    setTimeout(function () {
+      if (msg.textContent === '読み込んでいます…') show('時間がかかっています。インターネットの接続を確かめて、ページを再読み込み(Ctrl + F5)してください');
+    }, 20000);
+  })();
+</script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
